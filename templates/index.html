@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐾 全台流浪動物認領養系統</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    
+    <style>
+        body { background-color: #f4f6f9; font-family: "Microsoft JhengHei", sans-serif; }
+        .filter-panel { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .animal-card { transition: transform 0.2s; border: none; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; }
+        .animal-card:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.15); }
+        .card-img-top { height: 220px; object-fit: cover; background-color: #e9ecef; }
+        .info-label { font-size: 14px; color: #6c757d; }
+        .info-value { font-size: 14px; color: #212529; font-weight: 500; }
+        .ts-control { border-radius: 6px !important; min-height: 38px !important; padding: 6px 12px !important; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark bg-success shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand mb-0 h1 text-decoration-none" href="/">🐾 流浪動物收容與認養媒合平台</a>
+            <div class="d-flex align-items-center">
+                <div id="auth-area">
+                    <a href="/register" class="btn btn-warning btn-sm fw-bold shadow-sm px-3 text-dark">志工/員工註冊 📝</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="p-4 mb-4 filter-panel">
+            <h5 class="fw-bold text-success mb-4">🔍 請選擇欲查詢的資料 (品種與收容所支援多選)</h5>
+            
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-secondary">動物種類</label>
+                    <div class="d-flex align-items-center" style="height: 38px;">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="kindRadio" id="kindAll" value="all" checked>
+                            <label class="form-check-label" for="kindAll">全部</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="kindRadio" id="kindDog" value="狗">
+                            <label class="form-check-label" for="kindDog">犬 🐶</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="kindRadio" id="kindCat" value="貓">
+                            <label class="form-check-label" for="kindCat">貓 🐱</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <label class="form-label fw-bold text-secondary">選擇品種 (可多選)</label>
+                    <select id="filter-variety" multiple placeholder="請選擇一或多個品種..."></select>
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label fw-bold text-secondary">收容所 (可多選，支援打字搜尋)</label>
+                    <select id="filter-shelter" multiple placeholder="點擊選擇，或直接輸入關鍵字搜尋（例如：嘉義）..."></select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary">動物性別</label>
+                    <select class="form-select" id="filter-sex">
+                        <option value="all">全部性別</option>
+                        <option value="M">公 ♂</option>
+                        <option value="F">母 ♀</option>
+                        <option value="N">未成熟/未知</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary">入所年齡</label>
+                    <select class="form-select" id="filter-age">
+                        <option value="all">全部年齡</option>
+                        <option value="CHILD">幼年</option>
+                        <option value="ADULT">成年</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary">來源行政區</label>
+                    <input type="text" class="form-control" id="filter-district" placeholder="請輸入尋獲鄉鎮區">
+                </div>
+
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-info w-100 text-white fw-bold shadow-sm" id="btn-filter" style="height: 38px;">開始查詢</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3 text-secondary text-end fw-bold" id="total-records-text"></div>
+        <div class="row row-cols-1 row-cols-md-3 g-4 mb-4" id="animal-grid"></div>
+
+        <nav class="d-flex justify-content-center mb-5">
+            <ul class="pagination shadow-sm" id="pagination-controls"></ul>
+        </nav>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script>
+        let currentPage = 1;
+        
+        let varietyTs = new TomSelect('#filter-variety', { plugins: ['remove_button'], maxItems: null });
+        let shelterTs = new TomSelect('#filter-shelter', { plugins: ['remove_button'], maxItems: null });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // 一開網頁，非同步去檢查登入狀態
+            checkAuthStatus();
+
+            fetch('/api/shelters')
+                .then(res => res.json())
+                .then(result => {
+                    if(result.success) {
+                        populateShelters(result.shelters);
+                    }
+                });
+
+            fetchVarieties('all');
+
+            document.querySelectorAll('input[name="kindRadio"]').forEach(radio => {
+                radio.addEventListener('change', function(e) {
+                    fetchVarieties(e.target.value);
+                });
+            });
+
+            fetchData(currentPage);
+
+            document.getElementById('btn-filter').addEventListener('click', function() {
+                currentPage = 1;
+                fetchData(currentPage);
+            });
+        });
+
+        // 智慧型權限抽換處理器
+        function checkAuthStatus() {
+            const authArea = document.getElementById('auth-area');
+            fetch('/api/check_session')
+                .then(res => res.json())
+                .then(auth => {
+                    if (auth.logged_in) {
+                        let adminButton = '';
+                        if(auth.role === '管理員') {
+                            // ✨ 這裡同步改成指向 /management/dashboard，徹底甩開瀏覽器 HTTPS 安全限制！
+                            adminButton = `<a href="/management/dashboard" class="btn btn-light btn-sm fw-bold me-2 text-danger border-danger">後台管理 🛠️</a>`;
+                        }
+
+                        authArea.innerHTML = `
+                            ${adminButton}
+                            <span class="text-white fw-bold me-3 bg-dark bg-opacity-25 px-3 py-2 rounded-pill">
+                                👤 歡迎，${auth.name} (${auth.role})
+                            </span>
+                            <a href="/api/logout" class="btn btn-outline-light btn-sm fw-bold px-3">登出</a>
+                        `;
+                    }
+                });
+        }
+
+        function fetchVarieties(kind) {
+            fetch(`/api/varieties?kind=${kind}`)
+                .then(res => res.json())
+                .then(result => {
+                    if(result.success) {
+                        varietyTs.clear();
+                        varietyTs.clearOptions();
+                        result.varieties.forEach(v => {
+                            varietyTs.addOption({ value: v, text: v });
+                        });
+                        varietyTs.refreshOptions(false);
+                    }
+                });
+        }
+
+        function populateShelters(shelters) {
+            shelterTs.clearOptions();
+            shelters.forEach(s => {
+                shelterTs.addOption({ value: s.id, text: s.name });
+            });
+            shelterTs.refreshOptions(false);
+        }
+
+        function fetchData(page) {
+            const kind = document.querySelector('input[name="kindRadio"]:checked').value;
+            const variety = varietyTs.getValue().join(',');
+            const shelter_id = shelterTs.getValue().join(',');
+            const sex = document.getElementById('filter-sex').value;
+            const age = document.getElementById('filter-age').value;
+            const district = document.getElementById('filter-district').value.trim();
+
+            const grid = document.getElementById('animal-grid');
+            grid.innerHTML = `<div class="text-center w-100 my-5"><div class="spinner-border text-success" role="status"></div><p class="mt-2 text-muted">正在向 SQL Server 進行複選複合查詢...</p></div>`;
+
+            const url = `/api/animals?page=${page}&kind=${kind}&variety=${encodeURIComponent(variety)}&shelter_id=${shelter_id}&sex=${sex}&age=${age}&district=${encodeURIComponent(district)}`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        renderCards(result.data);
+                        renderPagination(result.pagination);
+                        document.getElementById('total-records-text').innerText = `📊 符合條件總計：${result.pagination.total_records} 筆毛孩`;
+                    } else {
+                        alert('讀取失敗：' + result.error);
+                    }
+                });
+        }
+
+        function renderCards(animals) {
+            const grid = document.getElementById('animal-grid');
+            grid.innerHTML = '';
+            if (animals.length === 0) {
+                grid.innerHTML = `<div class="text-center w-100 my-5 text-muted"><h3>❌ 找不到符合這些複選條件的毛孩</h3></div>`;
+                return;
+            }
+            animals.forEach(animal => {
+                const sexText = animal.sex === 'M' ? '男生 ♂' : (animal.sex === 'F' ? '女生 ♀' : '未知');
+                const ageText = animal.age === 'ADULT' ? '成年' : (animal.age === 'CHILD' ? '幼年' : '未知');
+                const sterilizationBadge = animal.is_sterilized ? '<span class="badge bg-info text-dark me-1">已絕育</span>' : '<span class="badge bg-light text-secondary me-1">未絕育</span>';
+                const vaccineBadge = animal.is_vaccinated ? '<span class="badge bg-primary me-1">已打狂犬疫苗</span>' : '<span class="badge bg-light text-secondary me-1">未打疫苗</span>';
+
+                grid.innerHTML += `
+                    <div class="col">
+                        <div class="card h-100 animal-card">
+                            <img src="${animal.album_file}" class="card-img-top" onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=500'">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge bg-success">${animal.kind} · ${animal.variety || '米克斯'}</span>
+                                    <span class="badge bg-warning text-dark">${animal.status}認養</span>
+                                </div>
+                                <h5 class="card-title fw-bold text-dark text-truncate mb-3">ID: ${animal.animal_id}</h5>
+                                <div class="row g-2 mb-3 bg-light p-2 rounded">
+                                    <div class="col-6"><span class="info-label">性別：</span><span class="info-value">${sexText}</span></div>
+                                    <div class="col-6"><span class="info-label">年齡：</span><span class="info-value">${ageText}</span></div>
+                                    <div class="col-12 text-truncate"><span class="info-label">毛色：</span><span class="info-value">${animal.colour || '未登錄'}</span></div>
+                                    <div class="col-12 text-truncate"><span class="info-label">尋獲：</span><span class="info-value" title="${animal.found_place || '未知'}">${animal.found_place || '未知'}</span></div>
+                                </div>
+                                <div class="mb-3">${sterilizationBadge}${vaccineBadge}</div>
+                                <p class="card-text text-secondary small mt-auto mb-3">🏢 <strong>收容單位：</strong><br>${animal.shelter_name}</p>
+                                <a href="/animal/${animal.animal_id}" class="btn btn-success w-100 rounded-pill fw-bold mt-auto">查看詳細資料</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderPagination(info) {
+            const container = document.getElementById('pagination-controls');
+            container.innerHTML = '';
+            const { current_page, total_pages } = info;
+            if (total_pages <= 1) return;
+
+            const prevDisabled = current_page === 1 ? 'disabled' : '';
+            container.innerHTML += `<li class="page-item ${prevDisabled}"><button class="page-link text-success" onclick="changePage(${current_page - 1})">上一頁</button></li>`;
+
+            let startPage = Math.max(1, current_page - 2);
+            let endPage = Math.min(total_pages, current_page + 2);
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === current_page ? 'active' : '';
+                const btnStyle = i === current_page ? 'bg-success border-success text-white' : 'text-success';
+                container.innerHTML += `<li class="page-item ${activeClass}"><button class="page-link ${btnStyle}" onclick="changePage(${i})">${i}</button></li>`;
+            }
+
+            const nextDisabled = current_page === total_pages ? 'disabled' : '';
+            container.innerHTML += `<li class="page-item ${nextDisabled}"><button class="page-link text-success" onclick="changePage(${current_page + 1})">下一頁</button></li>`;
+        }
+
+        function changePage(targetPage) {
+            currentPage = targetPage;
+            fetchData(currentPage);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

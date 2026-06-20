@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📝 志工系統 - 帳號註冊</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: "Microsoft JhengHei", sans-serif; }
+        .register-card { max-width: 550px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark bg-dark shadow-sm mb-5">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">🏢 收容所後台管理系統</span>
+            <a href="/" class="btn btn-outline-light btn-sm">返回民眾認養首頁</a>
+        </div>
+    </nav>
+
+    <div class="container d-flex justify-content-center">
+        <div class="register-card w-100 p-4 mb-5">
+            <h3 class="fw-bold text-center text-dark mb-2">🐾 志工註冊</h3>
+            <p class="text-muted text-center small mb-4">請填寫基本資料，註冊成功後資料將寫入 Staff 資料表中</p>
+            
+            <hr>
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label fw-bold">真實姓名</label>
+                    <input type="text" class="form-control" id="staff-name" placeholder="請輸入姓名，例如：王小明">
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-bold">工作信箱 (Email)</label>
+                    <input type="email" class="form-control" id="staff-email" placeholder="example@shelter.gov.tw">
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-bold">設定登入密碼</label>
+                    <input type="password" class="form-control" id="staff-password" placeholder="請輸入密碼">
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-bold">身份角色</label>
+                    <select class="form-select" id="staff-role">
+                        <option value="志工" selected>志工</option>
+                        <option value="員工">員工</option>
+                        <option value="管理員">管理員</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-bold">所屬收容所</label>
+                    <select class="form-select" id="staff-shelter">
+                        <option value="">-- 正在載入收容所清單... --</option>
+                    </select>
+                </div>
+                <div class="col-12 mt-4">
+                    <button class="btn btn-primary w-100 fw-bold py-2 shadow-sm" onclick="submitRegister()">提交註冊資料 (INSERT)</button>
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <a href="/login" class="text-success small fw-bold text-decoration-none">已經有帳號了？點我直接登入 🔑</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/shelters')
+                .then(res => res.json())
+                .then(result => {
+                    if(result.success) {
+                        const select = document.getElementById('staff-shelter');
+                        select.innerHTML = '<option value="">-- 請選擇您服務的收容所 --</option>';
+                        result.shelters.forEach(s => {
+                            select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+                        });
+                    }
+                });
+        });
+
+        function submitRegister() {
+            const name = document.getElementById('staff-name').value.trim();
+            const email = document.getElementById('staff-email').value.trim();
+            const password = document.getElementById('staff-password').value.trim(); // 👈 讀取密碼
+            const role = document.getElementById('staff-role').value;
+            const shelterId = document.getElementById('staff-shelter').value;
+
+            if(!name || !email || !password || !shelterId) {
+                alert('所有欄位皆為必填，請檢查密碼是否未設定！');
+                return;
+            }
+
+            fetch('/api/register_staff', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name, email: email, password: password, role: role, shelter_id: shelterId })
+            })
+            .then(res => res.json())
+            .then(result => {
+                if(result.success) {
+                    alert('🎉 註冊成功！立刻帶您前往登入頁面。');
+                    location.href = '/login'; // 導向登入
+                } else {
+                    alert('❌ 註冊失敗：' + result.error);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

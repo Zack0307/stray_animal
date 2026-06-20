@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐾 動物認領養詳細資料</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: "Microsoft JhengHei", sans-serif; }
+        .main-card { background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; }
+        .card-header-blue { background-color: #1e70bf; color: white; font-weight: bold; font-size: 18px; text-align: center; padding: 12px; }
+        .animal-img { width: 100%; max-height: 450px; object-fit: cover; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .detail-item { display: flex; padding: 8px 0; border-bottom: 1px solid #edf0f5; align-items: center; }
+        .detail-label { width: 180px; font-weight: bold; color: #333; display: flex; align-items: center; }
+        .detail-label::before { content: ""; display: inline-block; width: 8px; height: 14px; background-color: #f1c40f; margin-right: 10px; border-radius: 2px; }
+        .detail-value { color: #555; font-size: 16px; }
+        .btn-adopt-bottom { background-color: #4ba3e3; color: white; font-weight: bold; font-size: 20px; width: 100%; padding: 15px; border: none; border-radius: 0 0 8px 8px; transition: background 0.2s; }
+        .btn-adopt-bottom:hover { background-color: #3582be; color: white; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark bg-success shadow-sm mb-4">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">🐾 全國動物收容管理系統</span>
+            <a href="/" class="btn btn-light btn-sm fw-bold text-success">返回首頁列表</a>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <div class="text-center my-4">
+            <h3 class="fw-bold text-secondary">🐾 動物認領養 🐾</h3>
+        </div>
+
+        <div class="main-card">
+            <div class="card-header-blue">動物資料</div>
+            <div class="p-4">
+                <div class="row g-4">
+                    <div class="col-md-5 text-center">
+                        <img id="animal-photo" src="" class="animal-img" alt="動物照片">
+                    </div>
+                    <div class="col-md-7">
+                        <div class="detail-item"><div class="detail-label">入所天數</div><div class="detail-value" id="days_in_shelter">1</div></div>
+                        <div class="detail-item"><div class="detail-label">入所日期</div><div class="detail-value" id="open_date">---</div></div>
+                        <div class="detail-item"><div class="detail-label">是否開放認領養</div><div class="detail-value" id="status">---</div></div>
+                        <div class="detail-item"><div class="detail-label">收容編號</div><div class="detail-value" id="gov_subid">---</div></div>
+                        <div class="detail-item"><div class="detail-label">動物類別</div><div class="detail-value" id="kind">---</div></div>
+                        <div class="detail-item"><div class="detail-label">品種/物種</div><div class="detail-value" id="variety">---</div></div>
+                        <div class="detail-item"><div class="detail-label">年齡</div><div class="detail-value" id="age">---</div></div>
+                        <div class="detail-item"><div class="detail-label">毛色</div><div class="detail-value" id="colour">---</div></div>
+                        <div class="detail-item"><div class="detail-label">體型</div><div class="detail-value" id="body_type">---</div></div>
+                        <div class="detail-item"><div class="detail-label">是否絕育</div><div class="detail-value" id="sterilized">---</div></div>
+                        <div class="detail-item"><div class="detail-label">項圈</div><div class="detail-value" id="collar">無</div></div>
+                        <div class="detail-item"><div class="detail-label">動物性別</div><div class="detail-value" id="sex">---</div></div>
+                        <div class="detail-item"><div class="detail-label">動物名</div><div class="detail-value" id="animal_title">---</div></div>
+                        <div class="detail-item"><div class="detail-label">來源行政區</div><div class="detail-value" id="found_place">---</div></div>
+                        <div class="detail-item"><div class="detail-label">公告收容所</div><div class="detail-value" id="shelter_name">---</div></div>
+                        <div class="detail-item"><div class="detail-label">收容所電話</div><div class="detail-value" id="shelter_tel">---</div></div>
+                        <div class="detail-item"><div class="detail-label">收容所地址</div><div class="detail-value" id="shelter_address">---</div></div>
+                        <div class="detail-item"><div class="detail-label">描述</div><div class="detail-value" id="remark">---</div></div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-adopt-bottom" data-bs-toggle="modal" data-bs-target="#adoptModal">我有意願領養</button>
+        </div>
+    </div>
+
+    <div class="modal fade" id="adoptModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold">📝 填寫認養意願申請單</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">申請人姓名</label>
+                        <input type="text" class="form-control" id="applicant-name" placeholder="請輸入您的真實姓名">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">聯絡電話</label>
+                        <input type="text" class="form-control" id="applicant-phone" placeholder="請輸入手機號碼">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-success fw-bold" onclick="submitAdoption()">正式送出申請 (寫入DB)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const animalId = "{{ animal_id }}";
+
+        function formatDate(dateStr) {
+            if (!dateStr || dateStr === '---') return '---';
+            try {
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return dateStr; 
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}/${mm}/${dd}`;
+            } catch (e) {
+                return dateStr;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch(`/api/animal/${animalId}`)
+                .then(res => res.json())
+                .then(result => {
+                    if(result.success) {
+                        const a = result.data;
+                        const formattedOpenDate = formatDate(a.open_date);
+
+                        document.getElementById('animal-photo').src = a.album_file;
+                        document.getElementById('days_in_shelter').innerText = a.days_in_shelter + " 天";
+                        document.getElementById('open_date').innerText = formattedOpenDate;
+                        document.getElementById('status').innerText = a.status + " (開放日期: " + formattedOpenDate + ")";
+                        document.getElementById('gov_subid').innerText = a.gov_subid || '---';
+                        document.getElementById('kind').innerText = a.kind;
+                        document.getElementById('variety').innerText = a.variety || '米克斯';
+                        document.getElementById('age').innerText = a.age;
+                        document.getElementById('colour').innerText = a.colour || '未登錄';
+                        document.getElementById('body_type').innerText = a.body_type || '一般';
+                        document.getElementById('sterilized').innerText = a.sterilized;
+                        document.getElementById('collar').innerText = a.collar;
+                        document.getElementById('sex').innerText = a.sex;
+                        document.getElementById('animal_title').innerText = a.animal_title;
+                        document.getElementById('found_place').innerText = a.found_place || '未知';
+                        document.getElementById('shelter_name').innerText = a.shelter_name;
+                        document.getElementById('shelter_tel').innerText = a.shelter_tel;
+                        document.getElementById('shelter_address').innerText = a.shelter_address;
+                        document.getElementById('remark').innerText = a.remark;
+                    } else {
+                        alert('資料讀取失敗：' + result.error);
+                    }
+                });
+        });
+
+        function submitAdoption() {
+            const name = document.getElementById('applicant-name').value.trim();
+            const phone = document.getElementById('applicant-phone').value.trim();
+            if(!name || !phone) { alert('請完整填寫姓名與電話！'); return; }
+
+            fetch('/api/apply_adoption', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ animal_id: animalId, name: name, phone: phone })
+            })
+            .then(res => res.json())
+            .then(result => {
+                if(result.success) {
+                    alert(result.message);
+                    location.href = '/';
+                } else {
+                    alert('資料庫寫入失敗，原因：' + result.error);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

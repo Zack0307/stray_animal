@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛠️ 超級管理員後台大本營</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: "Microsoft JhengHei", sans-serif; }
+        .dashboard-header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 25px 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .table-card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; }
+        .tab-btn { font-weight: bold; font-size: 16px; padding: 10px 20px; }
+        .animal-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-header mb-4">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="fw-bold m-0">🛠️ 系統最高管理員控制台</h2>
+                <p class="m-0 opacity-75 small mt-1">人員身份仲裁、志工入職審核、全庫動物上架管理中心</p>
+            </div>
+            <a href="/" class="btn btn-light fw-bold text-primary shadow-sm">返回民眾前台首頁 🐾</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <ul class="nav nav-tabs mb-4" id="adminTab" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link tab-btn active" id="staff-tab" data-bs-toggle="tab" data-bs-target="#staff-panel" type="button">👥 人員權限管理</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link tab-btn" id="animal-tab" data-bs-toggle="tab" data-bs-target="#animal-panel" type="button" onclick="loadAdminAnimals(1)">🐶 全庫動物管理 (CRUD)</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="adminTabContent">
+            <div class="tab-pane fade show active" id="staff-panel">
+                <div class="table-card p-4">
+                    <h5 class="fw-bold mb-3">👥 全收容所人員權限名冊</h5>
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>真實姓名</th><th>工作信箱</th><th>服務收容所</th><th>身份</th><th>狀態</th><th class="text-center">操作動作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staff-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="animal-panel">
+                <div class="table-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0 text-primary" id="admin-animal-total-text">🐶 正在計算全庫在架毛孩總數...</h5>
+                        <button class="btn btn-success fw-bold shadow-sm" onclick="openAnimalModal('add')">➕ 上架新毛孩</button>
+                    </div>
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>外觀照片</th><th>晶片編號 (ID)</th><th>種類/品種</th><th>性別/年齡</th><th>公告收容所</th><th class="text-center">完全控制權限</th>
+                            </tr>
+                        </thead>
+                        <tbody id="animal-table-body"></tbody>
+                    </table>
+
+                    <nav class="d-flex justify-content-center mt-4">
+                        <ul class="pagination shadow-sm" id="admin-animal-pagination"></ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="animalModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="modal-title-text">➕ 上架全新毛孩</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">晶片編號 (不可重複)</label>
+                        <input type="text" class="form-control" id="ani-id" placeholder="例如：GOV123456">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">動物種類</label>
+                        <select class="form-select" id="ani-kind" onchange="loadModalVarieties(this.value)">
+                            <option value="狗">犬 🐶</option>
+                            <option value="貓">貓 🐱</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">品種物種 (支援下拉與打字輸入)</label>
+                        <input type="text" class="form-control" id="ani-variety" list="variety-options" placeholder="請點擊選擇或直接輸入品種...">
+                        <datalist id="variety-options"></datalist>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">毛色</label>
+                        <input type="text" class="form-control" id="ani-colour" placeholder="例如：黑 / 黃白 / 虎斑">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">動物性別</label>
+                        <select class="form-select" id="ani-sex">
+                            <option value="M">公 ♂</option>
+                            <option value="F">母 ♀</option>
+                            <option value="N">未知 ❓</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">入所年齡</label>
+                        <select class="form-select" id="ani-age">
+                            <option value="ADULT">成年</option>
+                            <option value="CHILD">幼年</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">公告收容所</label>
+                        <select class="form-select" id="ani-shelter"></select>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">外觀相片網址 (URL)</label>
+                        <input type="text" class="form-control" id="ani-photo" placeholder="https://images.unsplash.com/...">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">尋獲/來源行政區</label>
+                        <input type="text" class="form-control" id="ani-place" placeholder="例如：中山區文明路">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">毛孩詳細描述/備註</label>
+                        <textarea class="form-control" id="ani-remark" rows="3" placeholder="請輸入毛孩的健康狀況或個性描述..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary fw-bold" onclick="saveAnimalData()">確認儲存 (寫入資料庫)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentAction = 'add';
+        let adminAnimalPage = 1; // ✨ 新增：紀錄後台目前看到第幾頁
+        const bsModal = new bootstrap.Modal(document.getElementById('animalModal'));
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStaffList();
+            loadShelterDropdown();
+        });
+
+        function loadShelterDropdown() {
+            fetch('/api/shelters').then(res => res.json()).then(r => {
+                if(r.success) {
+                    const sel = document.getElementById('ani-shelter');
+                    sel.innerHTML = '';
+                    r.shelters.forEach(s => { sel.innerHTML += `<option value="${s.id}">${s.name}</option>`; });
+                }
+            });
+        }
+
+        function loadModalVarieties(kind, selectedValue = '') {
+            const datalist = document.getElementById('variety-options');
+            datalist.innerHTML = '';
+            let defaultVarieties = kind === '狗' ? 
+                ['米克斯', '柴犬', '貴賓狗', '臘腸狗', '博美狗', '黃金獵犬', '拉布拉多', '柯基犬', '台灣犬'] : 
+                ['米克斯', '美國短毛貓', '英國短毛貓', '波斯貓', '暹羅貓', '蘇格蘭摺耳貓', '布偶貓'];
+
+            return fetch(`/api/varieties?kind=${kind}`)
+                .then(res => res.json())
+                .then(r => {
+                    let allVarieties = new Set([...defaultVarieties]);
+                    if(r.success) { r.varieties.forEach(v => { if(v) allVarieties.add(v); }); }
+                    allVarieties.forEach(v => { datalist.innerHTML += `<option value="${v}"></option>`; });
+                    if(selectedValue) { document.getElementById('ani-variety').value = selectedValue; }
+                });
+        }
+
+        // ==========================================
+        // 👥 模組一：志工管理
+        // ==========================================
+        function loadStaffList() {
+            fetch('/api/admin/staff_list').then(res => res.json()).then(result => {
+                if (result.success) {
+                    const tbody = document.getElementById('staff-table-body');
+                    tbody.innerHTML = '';
+                    result.staff.forEach(person => {
+                        let badge = person.status === '審核中' ? `<span class="badge bg-warning text-dark">審核中</span>` : (person.status === '已啟用' ? `<span class="badge bg-success">已啟用</span>` : `<span class="badge bg-danger">已停權</span>`);
+                        let btns = person.status === '審核中' ? `<button class="btn btn-success btn-sm fw-bold me-2" onclick="updateStaff('${person.id}', 'approve')">👍 核准</button>` : '';
+                        btns += person.status !== '停權' && person.status !== '已停權' ? `<button class="btn btn-outline-danger btn-sm fw-bold" onclick="updateStaff('${person.id}', 'suspend')">🚫 停權</button>` : `<button class="btn btn-outline-success btn-sm fw-bold" onclick="updateStaff('${person.id}', 'approve')">🔓 解封</button>`;
+                        tbody.innerHTML += `<tr><td class="fw-bold">${person.name}</td><td>${person.email}</td><td>${person.shelter_name}</td><td><select class="form-select form-select-sm" onchange="changeRole('${person.id}', this.value)"><option value="志工" ${person.role==='志工'?'selected':''}>志工</option><option value="員工" ${person.role==='員工'?'selected':''}>員工</option><option value="管理員" ${person.role==='管理員'?'selected':''}>管理員</option></select></td><td>${badge}</td><td class="text-center">${btns}</td></tr>`;
+                    });
+                }
+            });
+        }
+        function updateStaff(id, action) { fetch('/api/admin/update_staff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, action: action }) }).then(res => res.json()).then(() => loadStaffList()); }
+        function changeRole(id, role) { fetch('/api/admin/update_staff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, action: 'change_role', value: role }) }); }
+
+        // ==========================================
+        // 🐶 模組二：動物 CRUD (✨已升級全庫分頁流)
+        // ==========================================
+        
+        // 【查】加載指定頁數的動物（每次抓15筆，畫出分頁鈕）
+        function loadAdminAnimals(page) {
+            adminAnimalPage = page;
+            const tbody = document.getElementById('animal-table-body');
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4"><div class="spinner-border text-success"></div></td></tr>`;
+            
+            // 呼叫複合查詢 API，每頁撈出 15 筆
+            fetch(`/api/animals?page=${page}&limit=15`)
+                .then(res => res.json())
+                .then(r => {
+                    if(r.success) {
+                        tbody.innerHTML = '';
+                        // 1. 顯示全庫總筆數提示
+                        document.getElementById('admin-animal-total-text').innerText = `📊 全庫在架動物總計：${r.pagination.total_records} 筆`;
+                        
+                        // 2. 渲染表格列
+                        if(r.data.length === 0) {
+                            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">目前資料庫無任何在架動物。</td></tr>`;
+                            return;
+                        }
+                        r.data.forEach(a => {
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td><img src="${a.album_file}" class="animal-thumb" onerror="this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=100'"></td>
+                                    <td class="fw-bold"><code>${a.animal_id}</code></td>
+                                    <td><span class="badge bg-secondary">${a.kind}</span> ${a.variety}</td>
+                                    <td>${a.sex==='M'?'公':'母'} / ${a.age==='ADULT'?'成年':'幼年'}</td>
+                                    <td class="small">${a.shelter_name}</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-info btn-sm text-white fw-bold me-2" onclick="fetchSingleAnimalForEdit('${a.animal_id}')">📝 編輯修改</button>
+                                        <button class="btn btn-danger btn-sm fw-bold" onclick="deleteAnimal('${a.animal_id}')">⛔ 下架刪除</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+
+                        // 3. 畫出後台專用分頁按鈕組
+                        renderAdminPagination(r.pagination);
+                    }
+                });
+        }
+
+        // ✨ 新增：繪製後台分頁按鈕的處理器
+        function renderAdminPagination(info) {
+            const container = document.getElementById('admin-animal-pagination');
+            container.innerHTML = '';
+            const { current_page, total_pages } = info;
+            if (total_pages <= 1) return;
+
+            // 上一頁
+            const prevDisabled = current_page === 1 ? 'disabled' : '';
+            container.innerHTML += `<li class="page-item ${prevDisabled}"><button class="page-link text-primary" onclick="loadAdminAnimals(${current_page - 1})">«</button></li>`;
+
+            // 計算動態前後各兩頁的範圍
+            let startPage = Math.max(1, current_page - 2);
+            let endPage = Math.min(total_pages, current_page + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === current_page ? 'active' : '';
+                container.innerHTML += `<li class="page-item ${activeClass}"><button class="page-link" onclick="loadAdminAnimals(${i})">${i}</button></li>`;
+            }
+
+            // 下一頁
+            const nextDisabled = current_page === total_pages ? 'disabled' : '';
+            container.innerHTML += `<li class="page-item ${nextDisabled}"><button class="page-link text-primary" onclick="loadAdminAnimals(${current_page + 1})">»</button></li>`;
+        }
+
+        function openAnimalModal(mode) {
+            currentAction = mode;
+            if(mode === 'add') {
+                document.getElementById('modal-title-text').innerText = "➕ 上架全新流浪毛孩";
+                document.getElementById('ani-id').disabled = false;
+                document.getElementById('ani-id').value = '';
+                document.getElementById('ani-kind').value = '狗';
+                document.getElementById('ani-variety').value = '';
+                document.getElementById('ani-colour').value = '';
+                document.getElementById('ani-place').value = '';
+                document.getElementById('ani-remark').value = '';
+                
+                loadModalVarieties('狗');
+                bsModal.show();
+            }
+        }
+
+        function fetchSingleAnimalForEdit(animalId) {
+            fetch(`/api/animal/${animalId}`)
+                .then(res => res.json())
+                .then(r => {
+                    if(r.success) {
+                        currentAction = 'edit';
+                        document.getElementById('modal-title-text').innerText = `📝 修改毛孩資料 (ID: ${animalId})`;
+                        
+                        const idInput = document.getElementById('ani-id');
+                        idInput.value = r.data.animal_id;
+                        idInput.disabled = true;
+
+                        document.getElementById('ani-kind').value = r.data.kind;
+                        document.getElementById('ani-colour').value = r.data.colour;
+                        document.getElementById('ani-sex').value = r.data.sex;
+                        document.getElementById('ani-age').value = r.data.age;
+                        document.getElementById('ani-photo').value = r.data.album_file;
+                        document.getElementById('ani-place').value = r.data.found_place;
+                        document.getElementById('ani-remark').value = r.data.remark;
+                        // ✅ 修正：補上收容所選單的設值
+                        if (r.data.shelter_id) {
+                            document.getElementById('ani-shelter').value = r.data.shelter_id;
+                        }
+
+                        loadModalVarieties(r.data.kind, r.data.variety).then(() => {
+                            bsModal.show();
+                        });
+                    } else {
+                        alert('讀取失敗：' + r.error);
+                    }
+                });
+        }
+
+        function saveAnimalData() {
+            const payload = {
+                animal_id: document.getElementById('ani-id').value.trim(),
+                kind: document.getElementById('ani-kind').value,
+                variety: document.getElementById('ani-variety').value, 
+                colour: document.getElementById('ani-colour').value.trim(),
+                sex: document.getElementById('ani-sex').value,
+                age: document.getElementById('ani-age').value,
+                shelter_id: document.getElementById('ani-shelter').value,
+                album_file: document.getElementById('ani-photo').value.trim(),
+                found_place: document.getElementById('ani-place').value.trim(),
+                remark: document.getElementById('ani-remark').value.trim()
+            };
+
+            if(!payload.animal_id || !payload.variety || !payload.album_file) {
+                alert('晶片號碼、品種與照片網址為必填項目！');
+                return;
+            }
+
+            const targetApi = currentAction === 'add' ? '/api/admin/add_animal' : '/api/admin/edit_animal';
+
+            fetch(targetApi, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(r => {
+                if(r.success) {
+                    alert(r.message);
+                    bsModal.hide();
+                    loadAdminAnimals(adminAnimalPage); // ✨ 留在當前頁面刷數據
+                } else {
+                    alert('資料庫儲存失敗：' + r.error);
+                }
+            });
+        }
+
+        function deleteAnimal(animalId) {
+            if(!confirm(`⚠️ 確定要將晶片號碼為 [${animalId}] 的毛孩緊急下架嗎？\n下架後前台民眾將無法看見。`)) return;
+            fetch('/api/admin/delete_animal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ animal_id: animalId })
+            })
+            .then(res => res.json())
+            .then(r => {
+                if(r.success) {
+                    alert(r.message);
+                    loadAdminAnimals(adminAnimalPage); // ✨ 留在當前頁面刷數據
+                } else {
+                    alert('下架失敗：' + r.error);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
